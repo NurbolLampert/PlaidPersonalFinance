@@ -1,4 +1,7 @@
-import React, { useEffect, useContext, useCallback } from "react";
+import React, { useEffect, useContext, useCallback, useState } from "react";
+import { Line } from 'react-chartjs-2';
+import moment from 'moment';
+
 
 import Header from "./Components/Headers";
 import Products from "./Components/ProductTypes/Products";
@@ -7,8 +10,24 @@ import Context from "./Context";
 
 import styles from "./App.module.scss";
 
+interface Transaction {
+  transaction_id: string;
+  date: string;
+  category: string[];
+  amount: number;
+}
+
 const App = () => {
   const { linkSuccess, isItemAccess, isPaymentInitiation, dispatch } = useContext(Context);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+
+  const simpleTransactionCall = useCallback(async () => {
+    const response = await fetch("api/transactions",{
+      method: "GET",
+    });
+    const data = await response.json();
+    setTransactions(data.latest_transactions);
+  }, []);
 
   const getInfo = useCallback(async () => {
     const response = await fetch("/api/info", { method: "POST" });
@@ -82,6 +101,19 @@ const App = () => {
     init();
   }, [dispatch, generateToken, getInfo]);
 
+  const chartData = {
+    labels: transactions.map((transaction) => new Date(transaction.date)),
+    datasets: [
+      {
+        label: 'Spending',
+        data: transactions.map((transaction) => transaction.amount),
+        fill: false,
+        borderColor: 'rgb(75, 192, 192)',
+        tension: 0.1
+      }
+    ]
+  };
+
   return (
     <div className={styles.App}>
       <div className={styles.container}>
@@ -96,6 +128,31 @@ const App = () => {
                 <Products />
                 <Items />
                 <button onClick={simpleTransactionCall}>Get transactions!</button>
+
+                {/* Add the table */}
+                <div>
+                  <h1>Transactions</h1>
+
+                  {transactions.map(transaction => {
+                    const date = transaction?.date;
+                    const formattedDate = moment(date).format('YYYY-MM-DD');
+
+                    const amount = Number(transaction?.amount);
+
+                    const transactionId = transaction?.transaction_id;
+                    const category = transaction?.category;
+
+                    return (
+                      <div key={transactionId}>
+                        <p>Date: {formattedDate}</p>
+                        <p>Amount: {amount}</p>
+                        <p>Category: {category}</p>
+                      </div>
+                    );
+                  })}
+                </div>
+                {/* Add the chart */}
+                <Line data={chartData} options={{scales: { x: { type: 'timeseries' }}}} />
               </>
             )}
           </>
@@ -104,13 +161,4 @@ const App = () => {
     </div>
   );
 };
-
-const simpleTransactionCall = async() =>{
-  const response = await fetch("api/transactions",{
-    method: "GET",
-  });
-  const data = await response.json();
-  console.log(`Here is your data: ${JSON.stringify(data)}`)
-}
-
 export default App;
