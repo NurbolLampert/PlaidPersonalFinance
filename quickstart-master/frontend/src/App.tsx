@@ -95,6 +95,7 @@ const App = () => {
               <>
                 <Products />
                 <Items />
+                <button onClick={simpleTransactionCall}>Get transactions!</button>
               </>
             )}
           </>
@@ -103,5 +104,13 @@ const App = () => {
     </div>
   );
 };
+
+const simpleTransactionCall = async() =>{
+  const response = await fetch("api/transactions",{
+    method: "GET",
+  });
+  const data = await response.json();
+  console.log(`Here is your data: ${JSON.stringify(data)}`)
+}
 
 export default App;
