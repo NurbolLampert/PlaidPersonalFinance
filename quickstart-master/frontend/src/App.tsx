@@ -98,7 +98,24 @@ const App = () => {
                 <button onClick={simpleTransactionCall}>
                   Get Transactions!
                 </button>
-                <div id="output"></div>
+                <div id="totalSpend"></div>
+                <table id="transactionTable">
+                    <thead>
+                        <tr>
+                            <th>
+                                <button id="dateFilter">Date</button>
+                            </th>
+                            <th>
+                                <button id="amountFilter">Amount</button>
+                            </th>
+                            <th>Merchant</th>
+                            <th>Category</th>
+                            <th>Currency</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody">
+                    </tbody>
+                </table>
               </>
             )}
           </>
@@ -108,17 +125,57 @@ const App = () => {
   );
 };
 
+let transactions: any[] = [];
+
 const simpleTransactionCall = async () => {
-  const response  = await fetch("api/transactions", {
-    method: "GET",
-  });
-  const data = await response.json();
-  const outputElement = document.getElementById('output');
-  if (outputElement) {
-    outputElement.textContent = JSON.stringify(data, null, 2);
-  } else {
-    console.error('Could not find transaction element');
-  }
+    const response = await fetch("api/transactions", {
+        method: "GET",
+    });
+    const data = await response.json();
+    transactions = data.latest_transactions;
+    displayTransactions(transactions);
 };
+
+const displayTransactions = (transactions: any[]) => {
+    const tableBody = document.getElementById('tableBody');
+    if (!tableBody) {
+        console.error('Could not find table body element');
+        return;
+    }
+    tableBody.innerHTML = '';
+
+    transactions.forEach((transaction) => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${transaction.date}</td>
+            <td>${transaction.amount}</td>
+            <td>${transaction.merchant_name || '-'}</td>
+            <td>${transaction.category.join(', ')}</td>
+            <td>${transaction.iso_currency_code}</td>
+        `;
+        tableBody.appendChild(row);
+    });
+
+    const totalSpendElement = document.getElementById('totalSpend');
+    if (totalSpendElement) {
+        const totalSpend = transactions.reduce((total, transaction) => {
+            return total + (transaction.amount > 0 ? transaction.amount : 0);
+        }, 0);
+        totalSpendElement.textContent = `Total Spent Last Week: USD ${totalSpend.toFixed(2)}`;
+    }
+};
+
+document.getElementById('dateFilter')?.addEventListener('click', () => {
+  transactions.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  displayTransactions(transactions);
+});
+
+document.getElementById('amountFilter')?.addEventListener('click', () => {
+  transactions.sort((a, b) => b.amount - a.amount);
+  displayTransactions(transactions);
+});
+
+
+
 
 export default App;
