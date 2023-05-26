@@ -1,4 +1,6 @@
-import React, { useEffect, useContext, useCallback } from "react";
+import React, { useEffect, useContext, useCallback, useState } from "react";
+import { Bar, Doughnut } from "react-chartjs-2";
+import moment from "moment";
 
 import Header from "./Components/Headers";
 import Products from "./Components/ProductTypes/Products";
@@ -7,8 +9,39 @@ import Context from "./Context";
 
 import styles from "./App.module.scss";
 
+interface Transaction {
+  amount: number;
+  date: string;
+  merchant_name: string;
+  category: string[];
+  iso_currency_code: string;
+}
+
 const App = () => {
   const { linkSuccess, isItemAccess, isPaymentInitiation, dispatch } = useContext(Context);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [totals, setTotals] = useState({income: 0, spend: 0});
+  const [isLoading, setIsLoading] = useState(false);
+
+  const fetchTransactions = async () => {
+    setIsLoading(true);
+    try {
+      const response = await fetch('/api/transactions');
+      const data = await response.json();
+  
+      if (Array.isArray(data.latest_transactions)) {
+        setTransactions(data.latest_transactions);
+      } else {
+        console.error('Error: received data.latest_transactions is not an array', data);
+        setTransactions([]);
+      }
+    } catch (err) {
+      console.error(err);
+      setTransactions([]);
+    }
+    setIsLoading(false);
+  };
+  
 
   const getInfo = useCallback(async () => {
     const response = await fetch("/api/info", { method: "POST" });
@@ -82,40 +115,89 @@ const App = () => {
     init();
   }, [dispatch, generateToken, getInfo]);
 
+  useEffect(() => {
+    let income = 0, spend = 0;
+    transactions.forEach(transaction => {
+      if (transaction.amount > 0) {
+        income += transaction.amount;
+      } else {
+        spend += transaction.amount;
+      }
+    });
+    setTotals({income: parseFloat(income.toFixed(2)), spend: parseFloat(spend.toFixed(2))});
+  }, [transactions]);
+
+  const filterTransactionsByDate = (startDate: Date) => {
+    return transactions.filter(transaction => new Date(transaction.date) >= startDate);
+  };
+
+  const filterTransactionsForLastDays = (days: number) => {
+    const date = new Date();
+    date.setDate(date.getDate() - days);
+    return filterTransactionsByDate(date);
+  };
+
+  const handlePeriodClick = (days: number) => {
+    setTransactions(filterTransactionsForLastDays(days));
+  };
+
+
   return (
     <div className={styles.App}>
-      <div className={styles.container}>
+      <div id="body">
         <Header />
         {linkSuccess && (
           <>
-            {isPaymentInitiation && (
-              <Products />
-            )}
             {isItemAccess && (
               <>
-                <Products />
-                <Items />
-                <button onClick={simpleTransactionCall}>
-                  Get Transactions!
-                </button>
-                <div id="totalSpend"></div>
-                <table id="transactionTable">
-                    <thead>
-                        <tr>
-                            <th>
-                                <button id="dateFilter">Date</button>
-                            </th>
-                            <th>
-                                <button id="amountFilter">Amount</button>
-                            </th>
-                            <th>Merchant</th>
-                            <th>Category</th>
-                            <th>Currency</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tableBody">
-                    </tbody>
-                </table>
+                <h1>Personal Finance Dashboard</h1>
+                <button onClick={fetchTransactions}>Get Transactions!</button>
+                <div className="period-buttons">
+                  <button onClick={() => handlePeriodClick(7)}>Last 7 days</button>
+                  <button onClick={() => handlePeriodClick(30)}>Last 30 days</button>
+                </div>
+                <div className="transactions">
+                  {isLoading ? (
+                    <p>Loading...</p>
+                  ) : (
+                    <>
+                      <div className="total-info">
+                        <p>Total Income: {totals.income}</p>
+                        <p>Total Spend: {totals.spend}</p>
+                      </div>
+                      {transactions.length === 0 ? (
+                        <p>No transactions found.</p>
+                      ) : (
+                        <>
+                          <table>
+                            <thead>
+                              <tr>
+                                <th>Date</th>
+                                <th>Income</th>
+                                <th>Spend</th>
+                                <th>Merchant</th>
+                                <th>Category</th>
+                                <th>Currency</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {transactions.map(transaction => (
+                                <tr key={transaction.date}>
+                                  <td>{new Date(transaction.date).toLocaleDateString()}</td>
+                                  <td>{transaction.amount > 0 ? transaction.amount.toFixed(2) : '-'}</td>
+                                  <td>{transaction.amount < 0 ? (-transaction.amount).toFixed(2) : '-'}</td>
+                                  <td>{transaction.merchant_name || '-'}</td>
+                                  <td>{transaction.category.join(', ')}</td>
+                                  <td>{transaction.iso_currency_code}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </>
+                      )}
+                    </>
+                  )}
+                </div>
               </>
             )}
           </>
@@ -124,58 +206,5 @@ const App = () => {
     </div>
   );
 };
-
-let transactions: any[] = [];
-
-const simpleTransactionCall = async () => {
-    const response = await fetch("api/transactions", {
-        method: "GET",
-    });
-    const data = await response.json();
-    transactions = data.latest_transactions;
-    displayTransactions(transactions);
-};
-
-const displayTransactions = (transactions: any[]) => {
-    const tableBody = document.getElementById('tableBody');
-    if (!tableBody) {
-        console.error('Could not find table body element');
-        return;
-    }
-    tableBody.innerHTML = '';
-
-    transactions.forEach((transaction) => {
-        const row = document.createElement('tr');
-        row.innerHTML = `
-            <td>${transaction.date}</td>
-            <td>${transaction.amount}</td>
-            <td>${transaction.merchant_name || '-'}</td>
-            <td>${transaction.category.join(', ')}</td>
-            <td>${transaction.iso_currency_code}</td>
-        `;
-        tableBody.appendChild(row);
-    });
-
-    const totalSpendElement = document.getElementById('totalSpend');
-    if (totalSpendElement) {
-        const totalSpend = transactions.reduce((total, transaction) => {
-            return total + (transaction.amount > 0 ? transaction.amount : 0);
-        }, 0);
-        totalSpendElement.textContent = `Total Spent Last Week: USD ${totalSpend.toFixed(2)}`;
-    }
-};
-
-document.getElementById('dateFilter')?.addEventListener('click', () => {
-  transactions.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-  displayTransactions(transactions);
-});
-
-document.getElementById('amountFilter')?.addEventListener('click', () => {
-  transactions.sort((a, b) => b.amount - a.amount);
-  displayTransactions(transactions);
-});
-
-
-
 
 export default App;
