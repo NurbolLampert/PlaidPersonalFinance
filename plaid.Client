@@ -1,5 +1,0 @@
-PLAID_CLIENT_ID = 63b8f9256c19fe00130f7d05
-PLAID_SECRET = 887420aa55fe4761d207c314ad10b4
-PLAID_ENV = 'sandbox'  # or 'development', or 'production'
-
-client = plaid.Client(client_id=PLAID_CLIENT_ID, secret=PLAID_SECRET, environment=PLAID_ENV)
