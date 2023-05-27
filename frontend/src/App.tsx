@@ -1,13 +1,18 @@
-import React, { useEffect, useContext, useCallback } from "react";
+import React, { useEffect, useContext, useCallback, useState } from "react";
 
 import Header from "./Components/Headers";
 import Products from "./Components/ProductTypes/Products";
 import Items from "./Components/ProductTypes/Items";
 import Context from "./Context";
+import { Transaction } from './Transaction';
+import Charts from './Charts';
 
 import styles from "./App.module.scss";
 
-const App = () => {
+
+const App: React.FC = () => {
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [sortedTransactions, setSortedTransactions] = useState<Transaction[]>([]);
   const { linkSuccess, isItemAccess, isPaymentInitiation, dispatch } = useContext(Context);
 
   const getInfo = useCallback(async () => {
@@ -82,19 +87,83 @@ const App = () => {
     init();
   }, [dispatch, generateToken, getInfo]);
 
+  useEffect(() => {
+    // Fetch transactions
+    const fetchTransactions = async () => {
+      const response = await fetch("api/transactions", { method: "GET" });
+      const data = await response.json();
+      setTransactions(data.latest_transactions);
+    };
+
+    fetchTransactions();
+  }, []);
+
+  useEffect(() => {
+    setSortedTransactions(transactions);
+  }, [transactions]);
+
+  const sortTransactions = (type: 'date' | 'spent' | 'gained') => {
+    let sorted = [...transactions];
+    switch(type) {
+      case 'date':
+        sorted.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+        break;
+      case 'spent':
+        sorted = transactions.filter(t => t.amount > 0);
+        sorted.sort((a, b) => b.amount - a.amount);
+        break;
+      case 'gained':
+        sorted = transactions.filter(t => t.amount < 0);
+        sorted.sort((a, b) => a.amount - b.amount);
+        break;
+    }
+    setSortedTransactions(sorted);
+  };
+
+  const totalSpent = transactions.reduce((total, transaction) => {
+    return total + (transaction.amount > 0 ? transaction.amount : 0);
+  }, 0);
+
+
   return (
     <div className={styles.App}>
       <div className={styles.container}>
         <Header />
         {linkSuccess && (
           <>
-            {isPaymentInitiation && (
-              <Products />
-            )}
             {isItemAccess && (
               <>
-                <Products />
-                <Items />
+                <div>
+                <button onClick={() => sortTransactions('date')}>Sort by Date</button>
+                <button onClick={() => sortTransactions('spent')}>Sort by Spent</button>
+                <button onClick={() => sortTransactions('gained')}>Sort by Gained</button>
+                <div>Total Spend: USD {totalSpent.toFixed(2)}</div>
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Date</th>
+                      <th>Spent</th>
+                      <th>Gained</th>
+                      <th>Merchant</th>
+                      <th>Category</th>
+                      <th>Currency</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {sortedTransactions.map((transaction) => (
+                      <tr key={transaction.date + transaction.amount}>
+                        <td>{transaction.date}</td>
+                        <td>{transaction.amount > 0 ? transaction.amount.toFixed(2) : '-'}</td>
+                        <td>{transaction.amount < 0 ? (-transaction.amount).toFixed(2) : '-'}</td>
+                        <td>{transaction.merchant_name || '-'}</td>
+                        <td>{transaction.category.join(', ')}</td>
+                        <td>{transaction.iso_currency_code}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <Charts transactions={transactions} />
               </>
             )}
           </>

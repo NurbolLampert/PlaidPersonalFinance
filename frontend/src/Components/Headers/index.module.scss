@@ -11,7 +11,7 @@ body{
     display: flex;
     justify-content: center;
     align-items: center;
-    min-height: 100vh;
+    min-height: 30%;
     background-color: #111;
     color: white;
 }
@@ -36,4 +36,8 @@ body{
     height: 0;
     border-top: 60px solid var(--clr);
     border-right: 30px solid transparent;
+}
+
+button{
+    margin: 10px;
 }
