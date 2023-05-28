@@ -21,10 +21,8 @@ const Header = () => {
   } = useContext(Context);
 
   return (
-    <body>
-      <div className="thudnerbolt"></div>
-      <div className="shape4"></div>
-      <div>
+      <><div className="thudnerbolt"></div>
+      <div className="shape4"></div><div>
       <h1 className={styles.title}>Personal Finance</h1>
       {!linkSuccess ? (
         <>
@@ -42,109 +40,109 @@ const Header = () => {
               <code>PLAID_CLIENT_ID</code> and <code>PLAID_SECRET</code>.
             </Callout>
           ) : /* message if backend is running and there is no link token */
-          linkToken == null && backend ? (
-            <Callout warning>
-              <div>
-                Unable to fetch link_token: please make sure your backend server
-                is running and that your .env file has been configured
-                correctly.
+            linkToken == null && backend ? (
+              <Callout warning>
+                <div>
+                  Unable to fetch link_token: please make sure your backend server
+                  is running and that your .env file has been configured
+                  correctly.
+                </div>
+                <div>
+                  If you are on a Windows machine, please ensure that you have
+                  cloned the repo with{" "}
+                  <InlineLink
+                    href="https://github.com/plaid/quickstart#special-instructions-for-windows"
+                    target="_blank"
+                  >
+                    symlinks turned on.
+                  </InlineLink>{" "}
+                  You can also try checking your{" "}
+                  <InlineLink
+                    href="https://dashboard.plaid.com/activity/logs"
+                    target="_blank"
+                  >
+                    activity log
+                  </InlineLink>{" "}
+                  on your Plaid dashboard.
+                </div>
+                <div>
+                  Error Code: <code>{linkTokenError.error_code}</code>
+                </div>
+                <div>
+                  Error Type: <code>{linkTokenError.error_type}</code>{" "}
+                </div>
+                <div>Error Message: {linkTokenError.error_message}</div>
+              </Callout>
+            ) : linkToken === "" ? (
+              <div className={styles.linkButton}>
+                <Button large disabled>
+                  Loading...
+                </Button>
               </div>
-              <div>
-                If you are on a Windows machine, please ensure that you have
-                cloned the repo with{" "}
-                <InlineLink
-                  href="https://github.com/plaid/quickstart#special-instructions-for-windows"
-                  target="_blank"
-                >
-                  symlinks turned on.
-                </InlineLink>{" "}
-                You can also try checking your{" "}
-                <InlineLink
-                  href="https://dashboard.plaid.com/activity/logs"
-                  target="_blank"
-                >
-                  activity log
-                </InlineLink>{" "}
-                on your Plaid dashboard.
+            ) : (
+              <div className={styles.linkButton}>
+                <Link />
               </div>
-              <div>
-                Error Code: <code>{linkTokenError.error_code}</code>
-              </div>
-              <div>
-                Error Type: <code>{linkTokenError.error_type}</code>{" "}
-              </div>
-              <div>Error Message: {linkTokenError.error_message}</div>
-            </Callout>
-          ) : linkToken === "" ? (
-            <div className={styles.linkButton}>
-              <Button large disabled>
-                Loading...
-              </Button>
-            </div>
-          ) : (
-            <div className={styles.linkButton}>
-              <Link />
-            </div>
-          )}
+            )}
         </>
       ) : (
         <>
           {isPaymentInitiation ? (
             <>
-            <h4 className={styles.subtitle}>
-              Congrats! Your payment is now confirmed.
-              <p/>
-              <Callout>
-                You can see information of all your payments in the{' '}
-                <InlineLink
+              <h4 className={styles.subtitle}>
+                Congrats! Your payment is now confirmed.
+                <p />
+                <Callout>
+                  You can see information of all your payments in the{' '}
+                  <InlineLink
                     href="https://dashboard.plaid.com/activity/payments"
                     target="_blank"
-                >
-                  Payments Dashboard
-                </InlineLink>
-                .
-              </Callout>
-            </h4>
-            <p className={styles.requests}>
-              Now that the 'payment_id' stored in your server, you can use it to access the payment information:
-            </p>
-          </>
+                  >
+                    Payments Dashboard
+                  </InlineLink>
+                  .
+                </Callout>
+              </h4>
+              <p className={styles.requests}>
+                Now that the 'payment_id' stored in your server, you can use it to access the payment information:
+              </p>
+            </>
           ) : /* If not using the payment_initiation product, show the item_id and access_token information */ (
             <>
-            {isItemAccess ? (
+              {isItemAccess ? (
                 <h4 className={styles.subtitle}>
-                  Congrats! By linking an account, you can view your organized financials from:
+                  Congrats! By linking an account, you can now view your financials!
                 </h4>
-            ) : (
+              ) : (
                 <h4 className={styles.subtitle}>
                   <Callout warning>
                     Unable to connect
                   </Callout>
                 </h4>
-            )}
-            {/* <div className={styles.itemAccessContainer}>
-              <p className={styles.itemAccessRow}>
-                <span className={styles.idName}>item_id</span>
-                <span className={styles.tokenText}>{itemId}</span>
-              </p>
-
-              <p className={styles.itemAccessRow}>
-                <span className={styles.idName}>access_token</span>
-                <span className={styles.tokenText}>{accessToken}</span>
-              </p>
-            </div> */}
-            {/* {isItemAccess && (
-                <p className={styles.requests}>
-                  Now that you have an access_token, you can make all of the
-                  following requests:
-                </p>
-            )} */}
-          </>
+              )}
+              {/* <div className={styles.itemAccessContainer}>
+                      <p className={styles.itemAccessRow}>
+                        <span className={styles.idName}>item_id</span>
+                        <span className={styles.tokenText}>{itemId}</span>
+                      </p>
+        
+                      <p className={styles.itemAccessRow}>
+                        <span className={styles.idName}>access_token</span>
+                        <span className={styles.tokenText}>{accessToken}</span>
+                      </p>
+                    </div> */}
+              {/* {isItemAccess && (
+                        <p className={styles.requests}>
+                          Now that you have an access_token, you can make all of the
+                          following requests:
+                        </p>
+                    )} */}
+            </>
           )}
         </>
       )}
     </div>
-    </body>
+    </>
   );
 };
 

@@ -106,7 +106,7 @@ const App: React.FC = () => {
     let sorted = [...transactions];
     switch(type) {
       case 'date':
-        sorted.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+        sorted.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
         break;
       case 'spent':
         sorted = transactions.filter(t => t.amount > 0);
@@ -120,9 +120,9 @@ const App: React.FC = () => {
     setSortedTransactions(sorted);
   };
 
-  const totalSpent = transactions.reduce((total, transaction) => {
-    return total + (transaction.amount > 0 ? transaction.amount : 0);
-  }, 0);
+  // const totalSpent = transactions.reduce((total, transaction) => {
+  //   return total + (transaction.amount > 0 ? transaction.amount : 0);
+  // }, 0);
 
 
   return (
@@ -133,11 +133,12 @@ const App: React.FC = () => {
           <>
             {isItemAccess && (
               <>
+                <Charts transactions={transactions} />
                 <div>
                 <button onClick={() => sortTransactions('date')}>Sort by Date</button>
                 <button onClick={() => sortTransactions('spent')}>Sort by Spent</button>
                 <button onClick={() => sortTransactions('gained')}>Sort by Gained</button>
-                <div>Total Spend: USD {totalSpent.toFixed(2)}</div>
+                {/* <div>Total Spend: USD {totalSpent.toFixed(2)}</div> */}
                 <table>
                   <thead>
                     <tr>
@@ -163,7 +164,6 @@ const App: React.FC = () => {
                   </tbody>
                 </table>
               </div>
-              <Charts transactions={transactions} />
               </>
             )}
           </>
