@@ -1,2 +1,10 @@
-Just uploaded it to git.
-Need to upload Node and env token
+Terminal 1
+$ cp .env.example .env
+$ cd node
+$ npm i
+$ npm start //start listening on port 8000
+
+Terminal 2
+$ cd frontend
+$ npm i
+$ npm start //Port 3000
